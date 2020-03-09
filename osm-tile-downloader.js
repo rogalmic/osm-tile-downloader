@@ -119,9 +119,9 @@ var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
 };
 
 var increaseTileCount = function () {
-  // keeps track of tiles downloaded/checked and outputs progress info for every 10% completed
+  // keeps track of tiles downloaded/checked and outputs progress info for every 1% completed
   tileCount++;
-  var currentPercentage = Math.floor(Math.floor((tileCount / tilesToDownload) * 100) / 10) * 10;
+  var currentPercentage = Math.floor(Math.floor((tileCount / tilesToDownload) * 100));
   if (currentPercentage !== tileCountPercentage) {
     tileCountPercentage = currentPercentage;
     log.info("%d%% complete", tileCountPercentage);
