@@ -4,6 +4,7 @@
 var _ = require('lodash');
 var fs = require('fs');
 var http = require('http');
+var https = require('https');
 var path = require('path');
 var readline = require('readline');
 var util = require('util');
@@ -65,7 +66,8 @@ var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
     else {
       log.debug('Download %s', tile.url);
       mkdir(path.dirname(tile.file));
-      var req = http.request(tile.url, function (resp) {
+      var httpObj = tile.url.toString().startsWith("https") ? https : http;
+      var req = httpObj.request(tile.url, { headers : {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'} }, function (resp) {
         if (resp.statusCode !== 200) {
           log.error('Unexpected status code: %d (url: %s), retrying in %d ms', resp.statusCode, tile.url, options.retryDelay);
           setTimeout(function () {
