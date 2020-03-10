@@ -14,6 +14,8 @@ var winston = require('winston');
 var options = require('./lib/options')();
 var pkgInfo = require('./package');
 
+var geolimit = options.geolimit.split(":").map(v => Number.parseFloat(v));
+
 var log = new (winston.Logger)({
   transports: [
     new (winston.transports.Console)({
@@ -49,6 +51,9 @@ var confirmDownload = function (downloadCount, cb) {
   });
 };
 
+var lon2tile = function (lon,zoom) { return (Math.floor((lon+180)/360*Math.pow(2,zoom))); }
+var lat2tile = function (lat,zoom)  { return (Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 *Math.pow(2,zoom))); }
+
 var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
   retryCount = retryCount || 0;
   if (!tile) {
@@ -63,9 +68,18 @@ var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
         downloadTile(nextTile(startZoomLevel, endZoomLevel, tile), startZoomLevel, endZoomLevel);
       });
     }
+    else if (options.geolimit && (tile.x < lon2tile(geolimit[0], tile.zoom)  
+    || tile.x > lon2tile(geolimit[2], tile.zoom)
+    || tile.y < lat2tile(geolimit[1], tile.zoom)
+    || tile.y > lat2tile(geolimit[3], tile.zoom))) {
+      log.debug('Omit download  %s', tile.url);       
+        setImmediate(function () {
+          downloadTile(nextTile(startZoomLevel, endZoomLevel, tile), startZoomLevel, endZoomLevel);
+        }); 
+    }
     else {
       log.debug('Download %s', tile.url);
-      mkdir(path.dirname(tile.file));
+      mkdir(path.dirname(tile.file));      
       var httpObj = tile.url.toString().startsWith("https") ? https : http;
       var req = httpObj.request(tile.url, { headers : {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'} }, function (resp) {
         if (resp.statusCode !== 200) {
