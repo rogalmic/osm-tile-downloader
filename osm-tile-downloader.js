@@ -99,7 +99,19 @@ var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
         else {
           resp.on('error', function (error) {
             log.error('Error in response', error);
-            process.exit(3);
+            
+          setTimeout(function () {
+            if (retryCount < options.maxRetries) {
+              retryCount++;
+              log.info("Retrying %s", tile.url);
+              tiles.unshift(tile);
+            }
+            else {
+              log.info("Skipping tile: %s", tile.url);
+            }
+            downloadTile(nextTile(startZoomLevel, endZoomLevel, tile), startZoomLevel, endZoomLevel, retryCount);
+          }, options.retryDelay);
+                       
           });
 
           resp.on('end', function () {
@@ -117,7 +129,19 @@ var downloadTile = function (tile, startZoomLevel, endZoomLevel, retryCount) {
 
       req.on('error', function (error) {
         log.error('Error in request', error);
-        process.exit(2);
+        
+        setTimeout(function () {
+          if (retryCount < options.maxRetries) {
+            retryCount++;
+            log.info("Retrying %s", tile.url);
+            tiles.unshift(tile);
+          }
+          else {
+            log.info("Skipping tile: %s", tile.url);
+          }
+          downloadTile(nextTile(startZoomLevel, endZoomLevel, tile), startZoomLevel, endZoomLevel, retryCount);
+        }, options.retryDelay);
+        
       });
       req.end();
     }
